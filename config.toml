@@ -3,6 +3,9 @@ taxonomies = [{ name = "tags" }]
 base_url="https://lucassimpson0213.github.io/notes-blog"
 build_search_index = true
 [extra]
+
+stylesheets = ["giallo.css"]
+
 mathjax_dollar_inline_enable = true
 mathjax = true
 theme = "auto"
@@ -25,3 +28,9 @@ include_description = true
 include_path = true
 include_content = true
 index_format = "elasticlunr_json"
+
+[markdown.highlighting]
+error_on_missing_language = true
+style = "class"
+theme = "gruvbox-dark-hard"
+
