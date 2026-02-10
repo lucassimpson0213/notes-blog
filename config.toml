@@ -3,7 +3,7 @@ taxonomies = [{ name = "tags" }]
 base_url="https://lucassimpson0213.github.io/notes-blog"
 build_search_index = true
 [extra]
-
+toc = true
 stylesheets = ["giallo.css"]
 
 mathjax_dollar_inline_enable = true

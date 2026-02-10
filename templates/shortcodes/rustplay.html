@@ -1,0 +1,8 @@
+{% set code = body | urlencode %}
+
+<iframe
+  class="rust-playground"
+  src="https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&code={{ code }}"
+  loading="lazy">
+</iframe>
+

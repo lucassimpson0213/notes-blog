@@ -36,6 +36,17 @@
             {% block right_content %}
             {% endblock right_content %}
         </div>
+                {% block extra_body %}{% endblock extra_body %}
+
+        <script src="https://play.rust-lang.org/embedded-playground.js"></script>
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.playground) {
+                playground({ theme: "dark" });
+            }
+        });
+        </script>
+
     </body>
 
 </html>
