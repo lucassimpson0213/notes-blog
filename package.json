@@ -1,0 +1,25 @@
+{
+  "name": "website",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucassimpson0213/notes-blog.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lucassimpson0213/notes-blog/issues"
+  },
+  "homepage": "https://github.com/lucassimpson0213/notes-blog#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

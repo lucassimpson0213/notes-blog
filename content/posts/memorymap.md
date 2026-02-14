@@ -11,7 +11,9 @@ comment = true
 +++
 
 <style>.rust-playground { width: 100%; height: 420px; border: 1px solid #333; border-radius: 10px; } </style>
-
+## interactivity
+Possibly gonna get jiggy with some js soon
+embed some js in that puppy
 
 # Memory Map
 This guide is for setting up a memory map on a i686 operating system.
@@ -28,6 +30,7 @@ Without further ado, here's my tutorial.
 Currently most implemenations of kernels in 32 bit systems use either grub or limine as a bootloader.
 I am in a c kernel, following the bare bones tutorial so I use grub, using the multiboot 1 standard.
 
+if you are curious about the boot process and how that all works I have an article in my queue to write about that
 
 Upon boot, grub gives you information about your system including a multiboot header
 and the multiboot information structure.
@@ -84,9 +87,13 @@ I am using the first version of the multiboot standard. which gives you a struct
 
 
 ```
+## Boot
+There is quite a bit of information in here, that we don't necessarily need at the moment but is good to keep in mind going forward.
+The particular section we will be looking at is the  `mmap_length` and the `mmap_addr`
+We will need to first check if it is enabled with the flags field by derefencing the multiboot_info pointer that the hardware gives us.
 ## multiboot memory map entries
 This is super verbose so I condensed it down to just the memory map
-
+The multiboot info pointer is stored in the ebx register upon boot, which just happens to be the first and second argument upon boot
 
 ```rust
 Multiboot v1 — Getting the Memory Map
@@ -121,6 +128,24 @@ EBX
                               Physical address of memory map list
 ```
 
+
+We will be taking some ideas from the `multiboot` crate created by Gerd Zellwegar.
+
+The example flow that we would like to follow is:
+1. Get the physical address from EAX
+2. find a way to safely access the memory there, using a 32 bit address
+3. access that memory and build our own boot info struct that we can reference and
+control the lifetime of, removing the need to manage the lifetime of physical memory
+
+We will only build the bootinfo struct with one field which is a memory region for now because that's all we need.
+
+```rust
+    struct BootInfo {
+        memoryRegions: Vec<MemoryRegions>
+    }
+```
+
+
 {% rustplay() %}
 fn align_down(addr: u64) -> u64 {
     addr & !0xfff
@@ -131,4 +156,27 @@ fn main() {
     println!("{:#x}", align_down(addr));
 }
 {% end %}
+
+
+{%mermaid() %}
+flowchart LR
+    BIOS["BIOS / Firmware\n(reserved)"]
+    LOW["Low memory\n(partially usable)"]
+    HOLE["Hardware reserved"]
+    RAM["Usable RAM"]
+    ACPI["ACPI tables"]
+
+    BIOS --> LOW --> HOLE --> RAM --> ACPI
+{%end%}
+
+some experimentation is required with the diagrams; we need more  dynamically generated content based on typescript
+
+using svg and generating it dynamically is apparently really useful
+
+
+
+
+{% inline_svg(path="static/diagrams/memmap.svg") %}hello{% end %}
+
+next stop is a typescript tool in the browser that runs a model of the address space and then renders the sections in svg
 

@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "none",
+    "outFile": "./static/os.js",
+    "strict": true,
+    "removeComments": false
+  },
+  "include": ["ts/**/*.ts"]
+}
+

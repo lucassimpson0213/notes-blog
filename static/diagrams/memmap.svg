@@ -1,0 +1,44 @@
+<svg viewBox="0 0 900 140" width="100%" height="140" style="border:1px solid #444;border-radius:10px">
+
+  <!-- Title -->
+  <text x="20" y="20" fill="currentColor" font-size="16">
+    Physical Memory Layout
+  </text>
+
+  <!-- Address labels -->
+  <text x="20" y="120" fill="currentColor" font-size="12">0x00000000</text>
+  <text x="720" y="120" fill="currentColor" font-size="12">0x04000000 (64MB)</text>
+
+  <!-- Low usable memory -->
+  <rect x="20" y="50" width="180" height="30" fill="#8fbcbb" rx="6"/>
+  <text x="25" y="70" fill="black" font-size="12">Low Usable RAM</text>
+
+  <!-- EBDA -->
+  <rect x="200" y="50" width="40" height="30" fill="#bf616a" rx="6"/>
+  <text x="205" y="70" fill="white" font-size="11">EBDA</text>
+
+  <!-- BIOS ROM -->
+  <rect x="240" y="50" width="70" height="30" fill="#d08770" rx="6"/>
+  <text x="245" y="70" fill="white" font-size="11">BIOS</text>
+
+  <!-- Kernel -->
+  <rect x="310" y="50" width="120" height="30" fill="#5e81ac" rx="6"/>
+  <text x="320" y="70" fill="white" font-size="12">Your Kernel</text>
+
+  <!-- Usable RAM -->
+  <rect x="430" y="50" width="350" height="30" fill="#a3be8c" rx="6"/>
+  <text x="440" y="70" fill="black" font-size="12">Usable RAM</text>
+
+  <!-- ACPI -->
+  <rect x="780" y="50" width="70" height="30" fill="#b48ead" rx="6"/>
+  <text x="785" y="70" fill="white" font-size="12">ACPI</text>
+
+  <!-- Multiboot pointer arrow -->
+  <line x1="370" y1="30" x2="370" y2="50" stroke="currentColor" stroke-width="2"/>
+  <polygon points="370,50 365,42 375,42" fill="currentColor"/>
+  <text x="300" y="30" fill="currentColor" font-size="12">
+    kernel loaded here
+  </text>
+
+</svg>
+
