@@ -16,9 +16,7 @@ socials = [
 menu = [
 {name = "/root", url = "/", weight= 1},
    { name = "/posts", url = "/posts", weight = 1 },
-   { name = "Documentation", url = "/repos/" },
-  { name = "/about", url = "/about", weight = 3 },
-  { name = "/tags", url = "/tags", weight = 4 },
+   { name = "Documentation", url = "/repos/", weight = 1 },
 ]
 
 
