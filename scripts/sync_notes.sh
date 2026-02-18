@@ -4,26 +4,77 @@ set -euo pipefail
 WORKDIR="$(pwd)"
 TMPDIR="$WORKDIR/.repos_tmp"
 OWNER="lucassimpson0213"
+BASE="content/posts"   # <-- everything becomes posts
 
-echo "Cleaning old content..."
-rm -rf content/repos
-mkdir -p content/repos
+echo "Cleaning old synced content..."
+rm -rf "$BASE/repos"
+mkdir -p "$BASE/repos"
 
 rm -rf "$TMPDIR"
 mkdir -p "$TMPDIR"
 
-# Read repos.txt safely (supports last line without newline)
-while IFS= read -r repo || [ -n "${repo:-}" ]; do
-  # Trim whitespace
-  repo="$(echo "${repo:-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+inject_frontmatter_from_repo() {
+  local src_repo_dir="$1"   # cloned repo path
+  local src_file="$2"       # file inside that repo (absolute)
+  local dest_file="$3"      # file in Zola content (absolute)
+  local repo_name="$4"      # repo slug/name
 
-  # Skip blanks and comments
+  # Skip empty/non-file
+  [ -f "$dest_file" ] || return 0
+  [ -s "$dest_file" ] || return 0
+
+  local first
+  first="$(head -n 1 "$dest_file" || true)"
+  if [[ "$first" == "+++" ]] || [[ "$first" == "---" ]]; then
+    return 0
+  fi
+
+  # title: prefer H1, else filename
+  local h1 base title title_esc
+  h1="$(grep -m1 -E '^\# ' "$dest_file" | sed 's/^# *//' || true)"
+  base="$(basename "$dest_file" .md | sed 's/[-_]/ /g')"
+  title="${h1:-$base}"
+  title_esc="$(printf '%s' "$title" | sed 's/"/\\"/g')"
+
+  # dates from SOURCE repo history
+  # created = first commit touching file, updated = last commit touching file
+  local rel created updated today
+  today="$(date +%Y-%m-%d)"
+
+  rel="${src_file#$src_repo_dir/}"
+
+  created="$(git -C "$src_repo_dir" log --follow --diff-filter=A --format=%as -- "$rel" 2>/dev/null | tail -n 1 || true)"
+  updated="$(git -C "$src_repo_dir" log -1 --format=%as -- "$rel" 2>/dev/null || true)"
+
+  created="${created:-$today}"
+  updated="${updated:-$today}"
+
+  local tmp
+  tmp="$(mktemp)"
+  cat > "$tmp" <<EOF
++++
+title = "$title_esc"
+date = $created
+updated = $updated
+
+[taxonomies]
+repo = ["$repo_name"]
++++
+
+EOF
+  cat "$dest_file" >> "$tmp"
+  mv "$tmp" "$dest_file"
+}
+
+# Read repos.txt safely
+while IFS= read -r repo || [ -n "${repo:-}" ]; do
+  repo="$(echo "${repo:-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   if [ -z "$repo" ] || [[ "$repo" == \#* ]]; then
     continue
   fi
 
-  NAME="$(basename "$repo")"              # allow either "mb1_memmap" or "path/mb1_memmap"
-  TARGET="content/repos/$NAME"
+  NAME="$(basename "$repo")"
+  TARGET="$BASE/repos/$NAME"      # <-- under posts
   REPO_DIR="$TMPDIR/$NAME"
   WIKI_DIR="$TMPDIR/${NAME}.wiki"
 
@@ -41,8 +92,13 @@ while IFS= read -r repo || [ -n "${repo:-}" ]; do
     if [ -d "$REPO_DIR/notes" ]; then
       echo "  → copying notes/"
       mkdir -p "$TARGET/notes"
-      # copy contents (not the folder itself) so structure is stable
-      cp -R "$REPO_DIR/notes/." "$TARGET/notes/" || true
+
+      find "$REPO_DIR/notes" -type f -name "*.md" -print0 | while IFS= read -r -d '' src; do
+        rel="${src#$REPO_DIR/notes/}"
+        mkdir -p "$TARGET/notes/$(dirname "$rel")"
+        cp "$src" "$TARGET/notes/$rel"
+        inject_frontmatter_from_repo "$REPO_DIR" "$src" "$TARGET/notes/$rel" "$NAME"
+      done
     else
       echo "  → no notes/ folder"
     fi
@@ -60,62 +116,17 @@ while IFS= read -r repo || [ -n "${repo:-}" ]; do
     git clone --depth 1 "$WIKI_URL" "$WIKI_DIR"
 
     mkdir -p "$TARGET/wiki"
-    # Copy all markdown files from wiki repo (keeps subfolders if any)
-    find "$WIKI_DIR" -type f -name "*.md" -print0 | while IFS= read -r -d '' file; do
-      rel="${file#$WIKI_DIR/}"
+    find "$WIKI_DIR" -type f -name "*.md" -print0 | while IFS= read -r -d '' src; do
+      rel="${src#$WIKI_DIR/}"
       mkdir -p "$TARGET/wiki/$(dirname "$rel")"
-      cp "$file" "$TARGET/wiki/$rel"
+      cp "$src" "$TARGET/wiki/$rel"
+      inject_frontmatter_from_repo "$WIKI_DIR" "$src" "$TARGET/wiki/$rel" "$NAME"
     done
   else
     echo "  → no wiki repo"
   fi
 
 done < repos.txt
-
-# ----------------------
-# Inject Zola front matter into all synced markdown
-# ----------------------
-echo "Injecting front matter..."
-today="$(date +%Y-%m-%d)"
-
-find content/repos -type f -name "*.md" -print0 | while IFS= read -r -d '' f; do
-  # Skip if file is empty
-  if [ ! -s "$f" ]; then
-    continue
-  fi
-
-  first="$(head -n 1 "$f" || true)"
-  # Already has TOML or YAML front matter
-  if [[ "$first" == "+++" ]] || [[ "$first" == "---" ]]; then
-    continue
-  fi
-
-  # repo name is content/repos/<repo>/...
-  repo_name="$(echo "$f" | awk -F/ '{print $3}')"
-
-  # title: first H1, else filename
-  h1="$(grep -m1 -E '^\# ' "$f" | sed 's/^# *//' || true)"
-  base="$(basename "$f" .md | sed 's/[-_]/ /g')"
-  title="${h1:-$base}"
-  # escape quotes
-  title_esc="$(printf '%s' "$title" | sed 's/"/\\"/g')"
-
-  tmp="$(mktemp)"
-  cat > "$tmp" <<EOF
-+++
-title = "$title_esc"
-date = $today
-updated = $today
-
-
-
-+++
-
-EOF
-
-  cat "$f" >> "$tmp"
-  mv "$tmp" "$f"
-done
 
 rm -rf "$TMPDIR"
 echo "Sync complete."
