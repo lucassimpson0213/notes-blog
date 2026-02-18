@@ -17,7 +17,7 @@ while read repo; do
     NAME=$(basename "$repo")
     TARGET="content/repos/$NAME"
 
-    git clone --depth 1 "https://github.com/$repo.git" "$TMPDIR/$NAME"
+    git clone --depth 1 "https://github.com/lucassimpson0213/$repo.git" "$TMPDIR/$NAME"
 
     mkdir -p "$TARGET"
 
