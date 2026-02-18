@@ -107,8 +107,8 @@ title = "$title_esc"
 date = $today
 updated = $today
 
-[taxonomies]
-repo = ["$repo_name"]
+
+
 +++
 
 EOF
