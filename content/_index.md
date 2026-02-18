@@ -1,7 +1,7 @@
 +++
-title = "Hey there! 👋🏼"
-template = "home.html"
-transparent=true
+title = "Posts"
+sort_by = "date"
+paginate_by = 20
+transparent = true
 +++
 
-I'm a software engineer who loves to write about technology and programming.
