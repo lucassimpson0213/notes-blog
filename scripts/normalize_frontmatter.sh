@@ -1,17 +1,32 @@
 #!/usr/bin/env bash
+set -e
 
 FILE="$1"
 REPO="$2"
 
-# check if frontmatter already exists
-FIRSTLINE=$(head -n 1 "$FILE")
+# ---- SAFETY CHECKS ----
+if [ -z "$FILE" ]; then
+    echo "Skipping empty filename"
+    exit 0
+fi
+
+if [ ! -f "$FILE" ]; then
+    echo "Skipping non-file: $FILE"
+    exit 0
+fi
+
+# -----------------------
+
+# Check if frontmatter already exists
+FIRSTLINE=$(head -n 1 "$FILE" || true)
 
 if [[ "$FIRSTLINE" == "+++" ]]; then
     exit 0
 fi
 
-TITLE=$(basename "$FILE" .md)
-TITLE=$(echo "$TITLE" | sed 's/-/ /g' | sed 's/_/ /g')
+# Generate title from filename
+BASENAME=$(basename "$FILE" .md)
+TITLE=$(echo "$BASENAME" | sed 's/[-_]/ /g')
 
 DATE=$(date +%Y-%m-%d)
 
@@ -22,6 +37,7 @@ cat <<EOF > "$TMPFILE"
 title = "$TITLE"
 date = $DATE
 updated = $DATE
+
 [taxonomies]
 repo = ["$REPO"]
 +++
