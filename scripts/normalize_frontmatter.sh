@@ -1,42 +1,45 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-FILE="$1"
-REPO="$2"
+FILE="${1:-}"
+REPO="${2:-unknown}"
 
-# ---- SAFETY CHECKS ----
-if [ -z "$FILE" ]; then
-    echo "Skipping empty filename"
-    exit 0
+# Safety checks
+if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
+  exit 0
 fi
 
-if [ ! -f "$FILE" ]; then
-    echo "Skipping non-file: $FILE"
-    exit 0
+# Skip empty files
+if [ ! -s "$FILE" ]; then
+  exit 0
 fi
 
-# -----------------------
-
-# Check if frontmatter already exists
-FIRSTLINE=$(head -n 1 "$FILE" || true)
-
-if [[ "$FIRSTLINE" == "+++" ]]; then
-    exit 0
+# Already has TOML or YAML frontmatter?
+first="$(head -n 1 "$FILE" || true)"
+if [[ "$first" == "+++" ]] || [[ "$first" == "---" ]]; then
+  exit 0
 fi
 
-# Generate title from filename
-BASENAME=$(basename "$FILE" .md)
-TITLE=$(echo "$BASENAME" | sed 's/[-_]/ /g')
+# Title: prefer first Markdown H1, else filename
+h1="$(grep -m1 -E '^\# ' "$FILE" | sed 's/^# *//' || true)"
+base="$(basename "$FILE" .md | sed 's/[-_]/ /g')"
+title="${h1:-$base}"
 
-DATE=$(date +%Y-%m-%d)
+# Use git dates if available, else today
+# (works inside your Zola repo checkout)
+created="$(git log --follow --diff-filter=A --format=%as -- "$FILE" 2>/dev/null | tail -n 1 || true)"
+updated="$(git log -1 --format=%as -- "$FILE" 2>/dev/null || true)"
+today="$(date +%Y-%m-%d)"
+date="${created:-$today}"
+upd="${updated:-$today}"
 
-TMPFILE=$(mktemp)
+tmp="$(mktemp)"
 
-cat <<EOF > "$TMPFILE"
+cat > "$tmp" <<EOF
 +++
-title = "$TITLE"
-date = $DATE
-updated = $DATE
+title = "$(printf '%s' "$title" | sed 's/"/\\"/g')"
+date = $date
+updated = $upd
 
 [taxonomies]
 repo = ["$REPO"]
@@ -44,6 +47,6 @@ repo = ["$REPO"]
 
 EOF
 
-cat "$FILE" >> "$TMPFILE"
-mv "$TMPFILE" "$FILE"
+cat "$FILE" >> "$tmp"
+mv "$tmp" "$FILE"
 
