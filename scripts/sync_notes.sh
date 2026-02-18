@@ -128,6 +128,52 @@ while IFS= read -r repo || [ -n "${repo:-}" ]; do
 
 done < repos.txt
 
+echo "Generating section indexes..."
+
+# root repos section
+mkdir -p content/posts/repos
+cat > content/posts/repos/_index.md <<EOF
++++
+title = "Repository Notes"
+sort_by = "date"
++++
+Automatically synced notes and wiki pages from my GitHub repositories.
+EOF
+
+# per-repo indexes
+for repo_dir in content/posts/repos/*; do
+  [ -d "$repo_dir" ] || continue
+  repo_name="$(basename "$repo_dir")"
+
+  cat > "$repo_dir/_index.md" <<EOF
++++
+title = "$repo_name"
+sort_by = "date"
++++
+Notes and documentation for $repo_name.
+EOF
+
+  if [ -d "$repo_dir/wiki" ]; then
+    cat > "$repo_dir/wiki/_index.md" <<EOF
++++
+title = "$repo_name Wiki"
+sort_by = "date"
++++
+Wiki documentation synced from GitHub.
+EOF
+  fi
+
+  if [ -d "$repo_dir/notes" ]; then
+    cat > "$repo_dir/notes/_index.md" <<EOF
++++
+title = "$repo_name Notes"
+sort_by = "date"
++++
+Development notes and learning logs.
+EOF
+  fi
+done
+
 rm -rf "$TMPDIR"
 echo "Sync complete."
 
