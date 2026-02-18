@@ -57,8 +57,8 @@ title = "$title_esc"
 date = $created
 updated = $updated
 
-[taxonomies]
-repo = ["$repo_name"]
+
+
 +++
 
 EOF
