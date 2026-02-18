@@ -1,9 +1,11 @@
 name: Build and deploy Zola website
+
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [master, main]
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,10 +20,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
-        uses: actions/checkout@v6.0.1
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-         submodules: recursive
+          submodules: recursive
+
+      # ✅ NEW: Sync notes/wiki from your repos into content/
+      - name: Sync notes + wiki
+        run: |
+          chmod +x scripts/sync_notes.sh
+          ./scripts/sync_notes.sh
+
+      # ✅ OPTIONAL: normalize frontmatter after sync (if you have that script)
+      - name: Normalize frontmatter
+        run: |
+          if [ -f scripts/normalize_frontmatter.sh ]; then
+            chmod +x scripts/normalize_frontmatter.sh
+            ./scripts/normalize_frontmatter.sh
+          else
+            echo "No normalize_frontmatter.sh found, skipping."
+          fi
+
       - name: Build Zola + upload Pages artifact
         uses: getzola/github-pages@066755243e69f508fd1a74739fbf1a65f656c790
         with:
@@ -37,3 +56,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
