@@ -72,6 +72,51 @@ while IFS= read -r repo || [ -n "${repo:-}" ]; do
 
 done < repos.txt
 
+# ----------------------
+# Inject Zola front matter into all synced markdown
+# ----------------------
+echo "Injecting front matter..."
+today="$(date +%Y-%m-%d)"
+
+find content/repos -type f -name "*.md" -print0 | while IFS= read -r -d '' f; do
+  # Skip if file is empty
+  if [ ! -s "$f" ]; then
+    continue
+  fi
+
+  first="$(head -n 1 "$f" || true)"
+  # Already has TOML or YAML front matter
+  if [[ "$first" == "+++" ]] || [[ "$first" == "---" ]]; then
+    continue
+  fi
+
+  # repo name is content/repos/<repo>/...
+  repo_name="$(echo "$f" | awk -F/ '{print $3}')"
+
+  # title: first H1, else filename
+  h1="$(grep -m1 -E '^\# ' "$f" | sed 's/^# *//' || true)"
+  base="$(basename "$f" .md | sed 's/[-_]/ /g')"
+  title="${h1:-$base}"
+  # escape quotes
+  title_esc="$(printf '%s' "$title" | sed 's/"/\\"/g')"
+
+  tmp="$(mktemp)"
+  cat > "$tmp" <<EOF
++++
+title = "$title_esc"
+date = $today
+updated = $today
+
+[taxonomies]
+repo = ["$repo_name"]
++++
+
+EOF
+
+  cat "$f" >> "$tmp"
+  mv "$tmp" "$f"
+done
+
 rm -rf "$TMPDIR"
 echo "Sync complete."
 
