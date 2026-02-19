@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+
+# Zola build output
+public/
+
+# macOS / Windows junk
